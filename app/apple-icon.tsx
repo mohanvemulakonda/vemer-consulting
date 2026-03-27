@@ -1,4 +1,6 @@
 import { ImageResponse } from 'next/og';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 
 export const size = { width: 180, height: 180 };
 export const contentType = 'image/png';
@@ -13,16 +15,17 @@ export default function AppleIcon() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          background: '#1e40af',
+          background: 'linear-gradient(135deg, #050505, #0a0a0a)',
           borderRadius: 36,
-          fontFamily: 'monospace',
-          fontSize: 80,
-          fontWeight: 700,
-          color: 'white',
-          letterSpacing: -4,
         }}
       >
-        &lt;V/&gt;
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={`data:image/svg+xml;base64,${Buffer.from(readFileSync(join(process.cwd(), 'public', 'logo.svg'))).toString('base64')}`}
+          width={140}
+          height={140}
+          alt=""
+        />
       </div>
     ),
     { ...size }

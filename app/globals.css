@@ -19,7 +19,7 @@ html {
 
 /* Gradient text */
 .gradient-text {
-  background: linear-gradient(135deg, #fff 0%, rgba(255,255,255,0.6) 100%);
+  background: linear-gradient(135deg, #fff 0%, rgba(255,255,255,0.5) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -33,6 +33,39 @@ html {
   background-clip: text;
 }
 
+/* Glass card base */
+.glass {
+  background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255,255,255,0.08);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Glass shine / reflection streak */
+.glass::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(
+    105deg,
+    transparent 40%,
+    rgba(255,255,255,0.03) 45%,
+    rgba(255,255,255,0.06) 50%,
+    rgba(255,255,255,0.03) 55%,
+    transparent 60%
+  );
+  pointer-events: none;
+  transition: left 0.8s ease;
+}
+.glass:hover::after {
+  left: 120%;
+}
+
 /* Animated gradient border */
 @property --angle {
   syntax: '<angle>';
@@ -43,7 +76,7 @@ html {
 .glow-border {
   --angle: 0deg;
   border: 1px solid transparent;
-  background: linear-gradient(#0f1d32, #0f1d32) padding-box,
+  background: linear-gradient(#050505, #050505) padding-box,
     conic-gradient(from var(--angle), transparent 70%, rgba(96,165,250,0.3) 80%, transparent 90%) border-box;
   animation: rotate-border 4s linear infinite;
 }
@@ -63,7 +96,7 @@ html {
 /* Scroll progress bar */
 .scroll-progress {
   transform-origin: left;
-  background: linear-gradient(90deg, #3b82f6, #38bdf8);
+  background: linear-gradient(90deg, #60a5fa, #38bdf8);
 }
 
 /* Cursor glow for cards */
@@ -76,9 +109,9 @@ html {
   position: absolute;
   top: var(--mouse-y, 50%);
   left: var(--mouse-x, 50%);
-  width: 300px;
-  height: 300px;
-  background: radial-gradient(circle, rgba(96,165,250,0.06) 0%, transparent 70%);
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, rgba(96,165,250,0.08) 0%, transparent 70%);
   transform: translate(-50%, -50%);
   pointer-events: none;
   opacity: 0;

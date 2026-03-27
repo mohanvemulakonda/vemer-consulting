@@ -3,6 +3,7 @@
 import { motion, useScroll, useSpring, useTransform, useInView } from 'framer-motion';
 import { useEffect, useState, useRef, useCallback } from 'react';
 import Link from 'next/link';
+import BrushV from './components/BrushV';
 import {
   SiSalesforce, SiSap, SiKubernetes, SiDocker,
   SiGithub, SiDatabricks,
@@ -55,7 +56,7 @@ function ParticleField() {
     };
 
     const init = () => {
-      const count = Math.floor((w * h) / 1800);
+      const count = Math.floor((w * h) / 800);
       particles.current = Array.from({ length: count }, () => {
         const angle = Math.random() * Math.PI * 2;
         const speed = 0.2 + Math.random() * 0.5;
@@ -72,7 +73,7 @@ function ParticleField() {
           vx: Math.cos(angle) * speed,
           vy: Math.sin(angle) * speed,
           radius,
-          hue: 210 + Math.random() * 30,
+          hue: 217 + Math.random() * 20,
           alpha: radius > 10 ? 0.025 + Math.random() * 0.03
             : radius > 4 ? 0.05 + Math.random() * 0.06
             : 0.12 + Math.random() * 0.2,
@@ -600,13 +601,34 @@ const platforms = [
   { name: 'DevOps', icon: TbGitBranch, items: ['SFDX', 'Hardis', 'Gearset', 'GitHub', 'Azure DevOps', 'Docker', 'Kubernetes'] },
 ];
 
+/* ── Industries ── */
+const industries = ['Automotive', 'Manufacturing', 'Pharma', 'E-Commerce', 'Retail', 'Energy', 'Real Estate'];
+
 export default function Home() {
   const { scrollYProgress } = useScroll();
   const scaleX = useSpring(scrollYProgress, { stiffness: 100, damping: 30 });
   const [scrolled, setScrolled] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [showBackToTop, setShowBackToTop] = useState(false);
+  const [activeSection, setActiveSection] = useState('');
 
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 50);
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 50);
+      setShowBackToTop(window.scrollY > 600);
+
+      // Active section detection
+      const sections = ['solutions', 'process', 'platforms', 'contact'];
+      let current = '';
+      for (const id of sections) {
+        const el = document.getElementById(id);
+        if (el) {
+          const rect = el.getBoundingClientRect();
+          if (rect.top <= 200) current = id;
+        }
+      }
+      setActiveSection(current);
+    };
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
@@ -617,20 +639,20 @@ export default function Home() {
       <motion.div className="scroll-progress fixed top-0 left-0 right-0 h-[2px] z-[60]" style={{ scaleX }} />
 
       {/* ── NAV ── */}
-      <nav className={`fixed top-0 left-0 right-0 z-[60] transition-all duration-300 ${scrolled ? 'bg-[#0a1628]/80 backdrop-blur-xl border-b border-white/5' : ''}`}>
+      <nav className={`fixed top-0 left-0 right-0 z-[60] transition-all duration-300 ${scrolled ? 'bg-[#050505]/80 backdrop-blur-xl border-b border-white/5' : ''}`}>
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link href="/" className="font-[family-name:var(--font-mono)] text-sm group flex items-center gap-3">
-            <span className="text-lg font-bold"><span className="text-blue-400">&lt;</span><span className="text-white">V</span><span className="text-blue-400/40">/</span><span className="text-blue-400">&gt;</span></span>
-            <div className="w-px h-5 bg-white/10"></div>
-            <div>
-              <span className="text-white font-semibold text-[13px]">Vemer</span>
-              <span className="text-white/30 text-[11px] ml-1.5 tracking-[2px] uppercase">Consulting</span>
+          <Link href="/" className="group flex items-center gap-2">
+            <BrushV size={30} />
+            <div className="flex flex-col gap-1">
+              <span className="text-white font-semibold text-[16px] tracking-tight leading-none">Vemer</span>
+              <span className="text-white/35 text-[8px] tracking-[3px] uppercase leading-none">Consulting</span>
             </div>
           </Link>
 
+          {/* Desktop nav */}
           <div className="hidden md:flex items-center gap-8">
             {['Solutions', 'Process', 'Platforms', 'Contact'].map((item) => (
-              <a key={item} href={`#${item.toLowerCase()}`} className="text-[11px] text-white/50 hover:text-white transition-colors font-[family-name:var(--font-mono)] uppercase tracking-[3px]">
+              <a key={item} href={`#${item.toLowerCase()}`} className={`text-[11px] transition-colors font-[family-name:var(--font-mono)] uppercase tracking-[3px] ${activeSection === item.toLowerCase() ? 'text-blue-400' : 'text-white/50 hover:text-white'}`}>
                 {item}
               </a>
             ))}
@@ -638,66 +660,149 @@ export default function Home() {
               Get in Touch
             </a>
           </div>
+
+          {/* Mobile hamburger */}
+          <button
+            className="md:hidden flex flex-col gap-1.5 p-2"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label="Toggle menu"
+          >
+            <span className={`block w-5 h-[1.5px] bg-white/60 transition-all duration-300 ${mobileMenuOpen ? 'rotate-45 translate-y-[4.5px]' : ''}`} />
+            <span className={`block w-5 h-[1.5px] bg-white/60 transition-all duration-300 ${mobileMenuOpen ? 'opacity-0' : ''}`} />
+            <span className={`block w-5 h-[1.5px] bg-white/60 transition-all duration-300 ${mobileMenuOpen ? '-rotate-45 -translate-y-[4.5px]' : ''}`} />
+          </button>
         </div>
+
+        {/* Mobile menu dropdown */}
+        <motion.div
+          initial={false}
+          animate={{ height: mobileMenuOpen ? 'auto' : 0, opacity: mobileMenuOpen ? 1 : 0 }}
+          transition={{ duration: 0.3, ease: [0.25, 0.1, 0, 1] }}
+          className="md:hidden overflow-hidden bg-[#050505]/95 backdrop-blur-xl border-b border-white/5"
+        >
+          <div className="px-6 py-6 flex flex-col gap-5">
+            {['Solutions', 'Process', 'Platforms', 'Contact'].map((item) => (
+              <a
+                key={item}
+                href={`#${item.toLowerCase()}`}
+                onClick={() => setMobileMenuOpen(false)}
+                className="text-[12px] text-white/60 hover:text-white transition-colors font-[family-name:var(--font-mono)] uppercase tracking-[3px]"
+              >
+                {item}
+              </a>
+            ))}
+            <a href="#contact" onClick={() => setMobileMenuOpen(false)} className="text-[12px] font-[family-name:var(--font-mono)] uppercase tracking-[2px] px-5 py-2.5 bg-blue-500 text-white rounded-full hover:bg-blue-400 transition-colors text-center mt-2">
+              Get in Touch
+            </a>
+          </div>
+        </motion.div>
       </nav>
 
       {/* Global particle background */}
       <ParticleField />
 
       {/* ── HERO ── */}
-      <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-b from-[#0a1628] via-[#0f1d32] to-[#0a1628] pt-24">
+      <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-[#050505] pt-24">
 
-        {/* Ambient gradients */}
-        <div className="absolute top-0 right-0 w-[700px] h-[700px] bg-gradient-to-bl from-blue-500/8 to-transparent rounded-full blur-3xl" />
-        <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-gradient-to-tr from-cyan-500/5 to-transparent rounded-full blur-3xl" />
-        <div className="absolute top-1/3 left-1/4 w-[400px] h-[400px] bg-gradient-to-r from-indigo-500/5 to-transparent rounded-full blur-3xl" />
+        {/* Animated gradient mesh (#4) */}
+        <motion.div
+          className="absolute top-0 right-0 w-[700px] h-[700px] bg-gradient-to-bl from-blue-500/8 to-transparent rounded-full blur-3xl"
+          animate={{ x: [0, 30, -20, 0], y: [0, -25, 15, 0] }}
+          transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
+        />
+        <motion.div
+          className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-gradient-to-tr from-cyan-500/5 to-transparent rounded-full blur-3xl"
+          animate={{ x: [0, -20, 25, 0], y: [0, 20, -15, 0] }}
+          transition={{ duration: 25, repeat: Infinity, ease: 'linear' }}
+        />
+        <motion.div
+          className="absolute top-1/3 left-1/4 w-[400px] h-[400px] bg-gradient-to-r from-indigo-500/5 to-transparent rounded-full blur-3xl"
+          animate={{ x: [0, 15, -25, 0], y: [0, -20, 10, 0] }}
+          transition={{ duration: 18, repeat: Infinity, ease: 'linear' }}
+        />
 
         <div className="relative z-20 max-w-5xl mx-auto px-6 text-center">
+
+          {/* Floating badge (#2) */}
           <motion.div
-            initial={{ opacity: 0, y: 40 }}
+            initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
           >
-            <span className="inline-block font-[family-name:var(--font-mono)] text-blue-400/60 text-xs tracking-[4px] uppercase mb-8">Enterprise Solutions</span>
+            <motion.span
+              className="inline-flex items-center gap-2 glass rounded-full px-4 py-1.5 mb-10"
+              animate={{ y: [0, -4, 0] }}
+              transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+            >
+              <span className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-pulse" />
+              <span className="text-[10px] font-[family-name:var(--font-mono)] text-white/50 tracking-[2px] uppercase">Hamburg, Germany &middot; 10+ Years</span>
+            </motion.span>
+          </motion.div>
 
-            <h1 className="text-5xl lg:text-7xl tracking-tight leading-[1.1] mb-8">
-              <span className="font-extralight text-white/60">We architect </span>
-              <br />
-              <span className="font-bold gradient-text">CRM & Digital</span>
-              <br />
-              <span className="font-extralight text-white/60">systems that </span>
-              <span className="font-bold accent-gradient">scale.</span>
-            </h1>
+          {/* Tagline — stagger delay 0.3 (#3) */}
+          <motion.span
+            className="inline-block font-[family-name:var(--font-mono)] text-blue-400/60 text-xs tracking-[4px] uppercase mb-8"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.4 }}
+          >
+            Enterprise Solutions
+          </motion.span>
 
-            <p className="text-lg text-white/50 max-w-2xl mx-auto mb-12 font-light leading-relaxed">
-              End-to-end consulting for <span className="text-white/50">Salesforce</span>, <span className="text-white/50">Microsoft Dynamics</span>, and <span className="text-white/50">SAP</span> — from architecture design to DevOps automation.
-            </p>
+          {/* Heading — stagger delay 0.5 */}
+          <motion.h1
+            className="text-5xl lg:text-7xl tracking-tight leading-[1.1] mb-8"
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.6 }}
+          >
+            <span className="font-extralight text-white/60">We architect </span>
+            <br />
+            <span className="font-bold gradient-text">CRM & Digital</span>
+            <br />
+            <span className="font-extralight text-white/60">systems that </span>
+            <span className="font-bold accent-gradient">scale.</span>
+          </motion.h1>
 
-            {/* Stats */}
-            <div className="flex items-center justify-center gap-10 lg:gap-16 mb-14">
-              {stats.map((stat, i) => (
-                <motion.div
-                  key={stat.label}
-                  className="text-center"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.4 + i * 0.1 }}
-                >
-                  <div className="text-2xl lg:text-3xl font-bold text-white"><AnimatedCounter value={stat.value} suffix={stat.suffix} /></div>
-                  <div className="text-[10px] font-[family-name:var(--font-mono)] text-white/45 uppercase tracking-[2px] mt-1">{stat.label}</div>
-                </motion.div>
-              ))}
-            </div>
+          {/* Subtitle — stagger delay 0.7 */}
+          <motion.p
+            className="text-lg text-white/50 max-w-2xl mx-auto mb-12 font-light leading-relaxed"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.8 }}
+          >
+            End-to-end consulting for <span className="text-white/70">Salesforce</span>, <span className="text-white/70">Microsoft Dynamics</span>, and <span className="text-white/70">SAP</span> — from architecture design to DevOps automation.
+          </motion.p>
 
-            <div className="flex items-center justify-center gap-4 mb-20">
-              <a href="#contact" className="px-8 py-3.5 bg-blue-500 text-white rounded-full text-sm font-medium hover:bg-blue-400 transition-colors">
-                Start a Project
-              </a>
-              <a href="#solutions" className="px-8 py-3.5 border border-white/10 text-white/50 rounded-full text-sm font-medium hover:border-white/25 hover:text-white/80 transition-colors">
-                Our Solutions
-              </a>
-            </div>
+          {/* Stats — stagger delay 1.0 (#3) */}
+          <div className="flex items-center justify-center gap-10 lg:gap-16 mb-14">
+            {stats.map((stat, i) => (
+              <motion.div
+                key={stat.label}
+                className="text-center"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 1.0 + i * 0.12 }}
+              >
+                <div className="text-2xl lg:text-3xl font-bold text-white"><AnimatedCounter value={stat.value} suffix={stat.suffix} /></div>
+                <div className="text-[10px] font-[family-name:var(--font-mono)] text-white/45 uppercase tracking-[2px] mt-1">{stat.label}</div>
+              </motion.div>
+            ))}
+          </div>
 
+          {/* CTAs — stagger delay 1.5 */}
+          <motion.div
+            className="flex items-center justify-center gap-4 mb-20"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 1.5 }}
+          >
+            <a href="#contact" className="px-8 py-3.5 bg-blue-500 text-white rounded-full text-sm font-medium hover:bg-blue-400 transition-colors">
+              Start a Project
+            </a>
+            <a href="#solutions" className="px-8 py-3.5 border border-white/10 text-white/50 rounded-full text-sm font-medium hover:border-white/25 hover:text-white/80 transition-colors">
+              Our Solutions
+            </a>
           </motion.div>
         </div>
 
@@ -719,7 +824,7 @@ export default function Home() {
       </section>
 
       {/* ── MARQUEE ── */}
-      <div className="border-y border-white/5 py-5 overflow-hidden bg-[#0d1a2e]">
+      <div className="border-y border-white/5 py-5 overflow-hidden bg-[#080808]">
         <div className="marquee flex items-center gap-10 whitespace-nowrap">
           {[...Array(2)].map((_, setIdx) => (
             <div key={setIdx} className="flex items-center gap-10 shrink-0">
@@ -731,8 +836,37 @@ export default function Home() {
         </div>
       </div>
 
+      {/* ── INDUSTRIES ── */}
+      <section className="py-16 bg-[#050505]">
+        <div className="max-w-6xl mx-auto px-6">
+          <SectionReveal>
+            <div className="text-center mb-10">
+              <span className="font-[family-name:var(--font-mono)] text-blue-400/60 text-xs tracking-[3px] uppercase">{'// industries'}</span>
+              <h2 className="text-2xl lg:text-3xl mt-3 tracking-tight">
+                <span className="font-extralight text-white/60">Sectors we </span>
+                <span className="font-bold gradient-text">serve</span>
+              </h2>
+            </div>
+          </SectionReveal>
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            {industries.map((industry, i) => (
+              <motion.span
+                key={industry}
+                initial={{ opacity: 0, scale: 0.8 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.4, delay: i * 0.06 }}
+                className="glass rounded-full px-5 py-2.5 text-sm text-white/50 font-[family-name:var(--font-mono)] tracking-wide hover:text-white/80 hover:border-blue-500/20 transition-all cursor-default"
+              >
+                {industry}
+              </motion.span>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ── SOLUTIONS ── */}
-      <section id="solutions" className="py-28 bg-gradient-to-b from-[#0a1628] to-[#0d1a2e]">
+      <section id="solutions" className="py-28 bg-gradient-to-b from-[#050505] to-[#080808]">
         <div className="max-w-6xl mx-auto px-6">
           <SectionReveal className="mb-20">
             <span className="font-[family-name:var(--font-mono)] text-blue-400/60 text-xs tracking-[3px] uppercase">{'// what we do'}</span>
@@ -755,7 +889,7 @@ export default function Home() {
                   viewport={{ once: true, margin: '-50px' }}
                   transition={{ duration: 0.7, delay: i * 0.12, ease: [0.25, 0.1, 0, 1] }}
                 >
-                  <GlowCard className={`h-full bg-white/[0.03] border ${colors.border} p-7 hover:bg-white/[0.05] hover:border-white/10 transition-all`}>
+                  <GlowCard className={`h-full glass rounded-2xl ${colors.border} p-7 shadow-[0_0_1px_rgba(255,255,255,0.1)] hover:shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.06)] transition-all`}>
                     <div className={`w-10 h-10 rounded-xl ${colors.bg} flex items-center justify-center mb-5`}>
                       <Icon className={`w-5 h-5 ${colors.icon}`} />
                     </div>
@@ -775,7 +909,10 @@ export default function Home() {
       </section>
 
       {/* ── PROCESS ── */}
-      <section id="process" className="py-28 bg-[#0d1a2e] border-y border-white/5">
+      {/* Gradient divider */}
+      <div className="h-px bg-gradient-to-r from-transparent via-blue-500/20 to-transparent" />
+
+      <section id="process" className="py-28 bg-[#080808]">
         <div className="max-w-6xl mx-auto px-6">
           <SectionReveal className="mb-20">
             <span className="font-[family-name:var(--font-mono)] text-blue-400/60 text-xs tracking-[3px] uppercase">{'// how we work'}</span>
@@ -796,7 +933,7 @@ export default function Home() {
                   viewport={{ once: true, margin: '-50px' }}
                   transition={{ duration: 0.7, delay: i * 0.15, ease: [0.25, 0.1, 0, 1] }}
                 >
-                  <GlowCard className="h-full bg-white/[0.03] border border-white/5 p-7 hover:bg-white/[0.05] hover:border-white/10 transition-all">
+                  <GlowCard className="h-full glass rounded-2xl p-7 shadow-[0_0_1px_rgba(255,255,255,0.1)] hover:shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.06)] transition-all">
                     <div className="flex items-center gap-3 mb-5">
                       <span className="font-[family-name:var(--font-mono)] text-blue-400/30 text-2xl font-bold">0{i + 1}</span>
                       <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center">
@@ -814,7 +951,7 @@ export default function Home() {
       </section>
 
       {/* ── END-TO-END CAPABILITIES ── */}
-      <section className="py-28 bg-gradient-to-b from-[#0d1a2e] to-[#0a1628]">
+      <section className="py-28 bg-gradient-to-b from-[#080808] to-[#050505]">
         <div className="max-w-6xl mx-auto px-6">
           <SectionReveal className="mb-20">
             <span className="font-[family-name:var(--font-mono)] text-blue-400/60 text-xs tracking-[3px] uppercase">{'// expertise'}</span>
@@ -870,7 +1007,7 @@ export default function Home() {
                   viewport={{ once: true, margin: '-60px' }}
                   transition={{ duration: 0.8, delay: i * 0.1, ease: [0.25, 0.1, 0, 1] }}
                 >
-                  <GlowCard className={`bg-white/[0.03] border ${colors.border} p-7 hover:bg-white/[0.05] hover:border-white/10 transition-all`}>
+                  <GlowCard className={`glass rounded-2xl ${colors.border} p-7 shadow-[0_0_1px_rgba(255,255,255,0.1)] hover:shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.06)] transition-all`}>
                     <div className="flex items-center gap-3 mb-5">
                       <div className={`w-8 h-8 rounded-lg ${colors.bg} flex items-center justify-center`}>
                         <Icon className={`w-4 h-4 ${colors.icon}`} />
@@ -900,7 +1037,10 @@ export default function Home() {
       </section>
 
       {/* ── PLATFORMS ── */}
-      <section id="platforms" className="py-28 bg-[#0d1a2e] border-y border-white/5">
+      {/* Gradient divider */}
+      <div className="h-px bg-gradient-to-r from-transparent via-blue-500/20 to-transparent" />
+
+      <section id="platforms" className="py-28 bg-[#080808]">
         <div className="max-w-6xl mx-auto px-6">
           <SectionReveal className="mb-20">
             <span className="font-[family-name:var(--font-mono)] text-blue-400/60 text-xs tracking-[3px] uppercase">{'// platforms'}</span>
@@ -921,7 +1061,7 @@ export default function Home() {
                   viewport={{ once: true, margin: '-50px' }}
                   transition={{ duration: 0.7, delay: i * 0.12, ease: [0.25, 0.1, 0, 1] }}
                 >
-                  <GlowCard className="h-full bg-white/[0.03] border border-white/5 p-8 hover:bg-white/[0.05] hover:border-white/10 transition-all">
+                  <GlowCard className="h-full glass rounded-2xl p-8 shadow-[0_0_1px_rgba(255,255,255,0.1)] hover:shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.06)] transition-all">
                     <div className="flex items-center gap-3 mb-6">
                       <Icon className="w-6 h-6 text-blue-400" />
                       <span className="font-[family-name:var(--font-mono)] text-white font-semibold">{platform.name}</span>
@@ -942,7 +1082,7 @@ export default function Home() {
       </section>
 
       {/* ── WHY VEMER ── */}
-      <section className="py-28 bg-gradient-to-b from-[#0d1a2e] to-[#0a1628]">
+      <section className="py-28 bg-gradient-to-b from-[#080808] to-[#050505]">
         <div className="max-w-6xl mx-auto px-6">
           <SectionReveal className="mb-20">
             <span className="font-[family-name:var(--font-mono)] text-blue-400/60 text-xs tracking-[3px] uppercase">{'// why us'}</span>
@@ -981,57 +1121,201 @@ export default function Home() {
       </section>
 
       {/* ── CONTACT ── */}
-      <section id="contact" className="relative py-28 bg-gradient-to-b from-[#0a1628] to-[#060e1a] overflow-hidden">
-        {/* Globe — centered, large, tilted like Earth (23.5°), top visible, bottom clips */}
+      <section id="contact" className="relative py-28 bg-gradient-to-b from-[#050505] to-[#030303] overflow-hidden">
+        {/* Globe — centered, large, tilted like Earth (23.5°) */}
         <div className="absolute left-1/2 -translate-x-1/2 top-[5%] pointer-events-none" style={{ transform: 'translateX(-50%) rotate(-23.5deg)' }}>
           <div className="opacity-50">
             <WireframeGlobe />
           </div>
         </div>
 
-        <div className="relative z-20 max-w-4xl mx-auto px-6 text-center">
-          <SectionReveal>
+        <div className="relative z-20 max-w-5xl mx-auto px-6">
+          <SectionReveal className="text-center mb-14">
             <span className="font-[family-name:var(--font-mono)] text-blue-400/60 text-xs tracking-[3px] uppercase">{'// let\'s talk'}</span>
-            <h2 className="text-4xl lg:text-5xl mt-4 tracking-tight mb-6">
+            <h2 className="text-4xl lg:text-5xl mt-4 tracking-tight mb-4">
               <span className="font-extralight text-white/60">Ready to </span>
               <span className="font-bold text-white">transform?</span>
             </h2>
-            <p className="text-white/45 max-w-xl mx-auto mb-12">
+            <p className="text-white/45 max-w-xl mx-auto">
               Tell us about your project. We&apos;ll get back to you within 24 hours with a tailored proposal.
             </p>
-
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-6 mb-16">
-              <a href="mailto:info@vemerconsulting.com" className="px-8 py-4 bg-blue-500 text-white rounded-full text-sm font-medium hover:bg-blue-400 transition-colors flex items-center gap-2">
-                <TbMail className="w-4 h-4" />
-                info@vemerconsulting.com
-              </a>
-            </div>
-
-            <div className="flex items-center justify-center gap-12">
-              <div className="text-center">
-                <div className="text-[10px] font-[family-name:var(--font-mono)] text-white/35 uppercase tracking-[2px] mb-2">India</div>
-                <a href="tel:+919959300355" className="text-sm text-white/60 hover:text-white transition-colors">(+91) 9959 300 355</a>
-              </div>
-              <div className="w-px h-8 bg-white/10" />
-              <div className="text-center">
-                <div className="text-[10px] font-[family-name:var(--font-mono)] text-white/35 uppercase tracking-[2px] mb-2">Germany</div>
-                <a href="tel:+4917863196117" className="text-sm text-white/60 hover:text-white transition-colors">(+49) 178 6319617</a>
-              </div>
-            </div>
           </SectionReveal>
+
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-10">
+            {/* Contact form */}
+            <motion.div
+              className="lg:col-span-3"
+              initial={{ opacity: 0, y: 40 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.7 }}
+            >
+              <form
+                action={`mailto:info@vemerconsulting.com`}
+                method="POST"
+                encType="text/plain"
+                className="glass rounded-2xl p-8 space-y-5"
+              >
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                  <div>
+                    <label className="text-[10px] font-[family-name:var(--font-mono)] text-white/40 uppercase tracking-[2px] mb-2 block">Name</label>
+                    <input
+                      type="text"
+                      name="name"
+                      required
+                      className="w-full bg-white/[0.03] border border-white/8 rounded-xl px-4 py-3 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-blue-500/40 transition-colors"
+                      placeholder="Your name"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-[family-name:var(--font-mono)] text-white/40 uppercase tracking-[2px] mb-2 block">Email</label>
+                    <input
+                      type="email"
+                      name="email"
+                      required
+                      className="w-full bg-white/[0.03] border border-white/8 rounded-xl px-4 py-3 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-blue-500/40 transition-colors"
+                      placeholder="you@company.com"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-[10px] font-[family-name:var(--font-mono)] text-white/40 uppercase tracking-[2px] mb-2 block">Company</label>
+                  <input
+                    type="text"
+                    name="company"
+                    className="w-full bg-white/[0.03] border border-white/8 rounded-xl px-4 py-3 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-blue-500/40 transition-colors"
+                    placeholder="Company name (optional)"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-[family-name:var(--font-mono)] text-white/40 uppercase tracking-[2px] mb-2 block">Message</label>
+                  <textarea
+                    name="message"
+                    rows={4}
+                    required
+                    className="w-full bg-white/[0.03] border border-white/8 rounded-xl px-4 py-3 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-blue-500/40 transition-colors resize-none"
+                    placeholder="Tell us about your project..."
+                  />
+                </div>
+                <button
+                  type="submit"
+                  className="w-full sm:w-auto px-8 py-3.5 bg-blue-500 text-white rounded-full text-sm font-medium hover:bg-blue-400 transition-colors flex items-center justify-center gap-2"
+                >
+                  <TbMail className="w-4 h-4" />
+                  Send Message
+                </button>
+              </form>
+            </motion.div>
+
+            {/* Contact info sidebar */}
+            <motion.div
+              className="lg:col-span-2 flex flex-col gap-6"
+              initial={{ opacity: 0, y: 40 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.7, delay: 0.15 }}
+            >
+              <div className="glass rounded-2xl p-7">
+                <div className="text-[10px] font-[family-name:var(--font-mono)] text-blue-400/60 uppercase tracking-[2px] mb-4">Email</div>
+                <a href="mailto:info@vemerconsulting.com" className="text-white/70 hover:text-white transition-colors text-sm">info@vemerconsulting.com</a>
+              </div>
+
+              <div className="glass rounded-2xl p-7">
+                <div className="text-[10px] font-[family-name:var(--font-mono)] text-blue-400/60 uppercase tracking-[2px] mb-4">Phone</div>
+                <div className="space-y-3">
+                  <div>
+                    <div className="text-[10px] font-[family-name:var(--font-mono)] text-white/30 uppercase tracking-[1px] mb-1">India</div>
+                    <a href="tel:+919959300355" className="text-sm text-white/60 hover:text-white transition-colors">(+91) 9959 300 355</a>
+                  </div>
+                  <div>
+                    <div className="text-[10px] font-[family-name:var(--font-mono)] text-white/30 uppercase tracking-[1px] mb-1">Germany</div>
+                    <a href="tel:+4917863196117" className="text-sm text-white/60 hover:text-white transition-colors">(+49) 178 631 9617</a>
+                  </div>
+                </div>
+              </div>
+
+              <div className="glass rounded-2xl p-7">
+                <div className="text-[10px] font-[family-name:var(--font-mono)] text-blue-400/60 uppercase tracking-[2px] mb-4">Location</div>
+                <div className="flex items-center gap-2">
+                  <TbWorld className="w-4 h-4 text-blue-400/40" />
+                  <span className="text-sm text-white/60">Hamburg, Germany</span>
+                </div>
+              </div>
+            </motion.div>
+          </div>
         </div>
       </section>
 
       {/* ── FOOTER ── */}
-      <footer className="bg-[#060e1a] border-t border-white/5 py-8">
-        <div className="max-w-6xl mx-auto px-6 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <span className="font-[family-name:var(--font-mono)] text-sm font-bold"><span className="text-blue-400">&lt;</span><span className="text-white/50">V</span><span className="text-blue-400/40">/</span><span className="text-blue-400">&gt;</span></span>
-            <span className="font-[family-name:var(--font-mono)] text-[11px] text-white/25">vemerconsulting.com</span>
+      <footer className="bg-[#030303] border-t border-white/5 py-12">
+        <div className="max-w-6xl mx-auto px-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-10 mb-10">
+            {/* Logo */}
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                <BrushV size={26} />
+                <div className="flex flex-col gap-1">
+                  <span className="text-white font-semibold text-[14px] tracking-tight leading-none">Vemer</span>
+                  <span className="text-white/30 text-[7px] tracking-[3px] uppercase leading-none">Consulting</span>
+                </div>
+              </div>
+              <p className="text-[12px] text-white/30 leading-relaxed">Enterprise consulting for CRM, BI & Digital Transformation.</p>
+            </div>
+
+            {/* Solutions */}
+            <div>
+              <div className="text-[10px] font-[family-name:var(--font-mono)] text-white/50 uppercase tracking-[2px] mb-4">Solutions</div>
+              <div className="space-y-2.5">
+                {['CRM Implementation', 'Business Intelligence', 'DevOps & CI/CD', 'System Integration'].map((item) => (
+                  <a key={item} href="#solutions" className="block text-[12px] text-white/30 hover:text-white/60 transition-colors">{item}</a>
+                ))}
+              </div>
+            </div>
+
+            {/* Resources */}
+            <div>
+              <div className="text-[10px] font-[family-name:var(--font-mono)] text-white/50 uppercase tracking-[2px] mb-4">Resources</div>
+              <div className="space-y-2.5">
+                <Link href="/projects" className="block text-[12px] text-white/30 hover:text-white/60 transition-colors">Projects</Link>
+                <Link href="/use-cases" className="block text-[12px] text-white/30 hover:text-white/60 transition-colors">Use Cases</Link>
+                <Link href="/insights" className="block text-[12px] text-white/30 hover:text-white/60 transition-colors">Insights</Link>
+                <Link href="/about" className="block text-[12px] text-white/30 hover:text-white/60 transition-colors">About</Link>
+              </div>
+            </div>
+
+            {/* Contact */}
+            <div>
+              <div className="text-[10px] font-[family-name:var(--font-mono)] text-white/50 uppercase tracking-[2px] mb-4">Contact</div>
+              <div className="space-y-2.5">
+                <a href="mailto:info@vemerconsulting.com" className="block text-[12px] text-white/30 hover:text-white/60 transition-colors">info@vemerconsulting.com</a>
+                <a href="tel:+4917863196117" className="block text-[12px] text-white/30 hover:text-white/60 transition-colors">(+49) 178 631 9617</a>
+                <a href="tel:+919959300355" className="block text-[12px] text-white/30 hover:text-white/60 transition-colors">(+91) 9959 300 355</a>
+                <span className="block text-[12px] text-white/20">Hamburg, Germany</span>
+              </div>
+            </div>
           </div>
-          <span className="text-[11px] text-white/30">Hamburg, Germany</span>
+
+          <div className="border-t border-white/5 pt-6 flex items-center justify-between">
+            <span className="text-[11px] text-white/20 font-[family-name:var(--font-mono)]">vemerconsulting.com</span>
+            <span className="text-[11px] text-white/20">&copy; {new Date().getFullYear()} Vemer Consulting</span>
+          </div>
         </div>
       </footer>
+
+      {/* ── BACK TO TOP ── */}
+      <motion.button
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{ opacity: showBackToTop ? 1 : 0, scale: showBackToTop ? 1 : 0.8 }}
+        transition={{ duration: 0.2 }}
+        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+        className="fixed bottom-8 right-8 z-50 w-11 h-11 glass rounded-full flex items-center justify-center hover:border-blue-500/30 transition-all group"
+        style={{ pointerEvents: showBackToTop ? 'auto' : 'none' }}
+        aria-label="Back to top"
+      >
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="text-white/40 group-hover:text-white/80 transition-colors">
+          <path d="M8 12V4M8 4L4 8M8 4L12 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </motion.button>
     </div>
   );
 }
