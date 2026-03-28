@@ -1,6 +1,6 @@
 'use client';
 
-import { motion, useScroll, useSpring, useTransform, useInView } from 'framer-motion';
+import { motion, useScroll, useSpring, useTransform, useInView, useMotionValue, AnimatePresence } from 'framer-motion';
 import { useEffect, useState, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import BrushV from './components/BrushV';
@@ -17,6 +17,116 @@ import {
 } from 'react-icons/tb';
 import { FaCogs } from 'react-icons/fa';
 import type { IconType } from 'react-icons';
+
+/* ── 3D Cube Logo Reveal — scroll-driven, uses JS for explode ── */
+/* ── Logo Background — enlarged, half off-screen, subtle ── */
+function LogoBackground() {
+  return (
+    <div className="fixed -right-[25vw] top-1/2 -translate-y-1/2 pointer-events-none z-[5] opacity-[0.03]">
+      <motion.div
+        animate={{ rotate: 360 }}
+        transition={{ duration: 120, repeat: Infinity, ease: 'linear' }}
+      >
+        <BrushV size={1200} />
+      </motion.div>
+    </div>
+  );
+}
+
+/* ── Magnetic Button — follows cursor on hover ── */
+function MagneticButton({ children, className = '', href }: { children: React.ReactNode; className?: string; href?: string }) {
+  const ref = useRef<HTMLAnchorElement>(null);
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+
+  const handleMouse = useCallback((e: React.MouseEvent) => {
+    if (!ref.current) return;
+    const rect = ref.current.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    x.set((e.clientX - cx) * 0.3);
+    y.set((e.clientY - cy) * 0.3);
+  }, [x, y]);
+
+  const reset = useCallback(() => { x.set(0); y.set(0); }, [x, y]);
+
+  const springX = useSpring(x, { stiffness: 150, damping: 15 });
+  const springY = useSpring(y, { stiffness: 150, damping: 15 });
+
+  return (
+    <motion.a
+      ref={ref}
+      href={href}
+      className={className}
+      style={{ x: springX, y: springY }}
+      onMouseMove={handleMouse}
+      onMouseLeave={reset}
+      whileHover={{ scale: 1.05 }}
+      whileTap={{ scale: 0.97 }}
+    >
+      {children}
+    </motion.a>
+  );
+}
+
+/* ── Text Reveal — cinematic word clip-mask reveal ── */
+function TextReveal({ children, className = '', delay = 0 }: { children: string; className?: string; delay?: number }) {
+  const words = children.split(' ');
+  return (
+    <span className={className}>
+      {words.map((word, i) => (
+        <span key={i} className="inline-block overflow-hidden align-bottom">
+          <motion.span
+            className="inline-block"
+            initial={{ y: '110%', rotateX: -80 }}
+            animate={{ y: 0, rotateX: 0 }}
+            transition={{
+              duration: 0.8,
+              delay: delay + i * 0.08,
+              ease: [0.16, 1, 0.3, 1],
+            }}
+            style={{ transformOrigin: 'bottom' }}
+          >
+            {word}
+          </motion.span>
+          {i < words.length - 1 && '\u00A0'}
+        </span>
+      ))}
+    </span>
+  );
+}
+
+/* ── Spotlight Card — cursor-tracking glow ── */
+function SpotlightCard({ children, className = '' }: { children: React.ReactNode; className?: string }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState({ x: 50, y: 50 });
+  const [hovering, setHovering] = useState(false);
+
+  const handleMouse = useCallback((e: React.MouseEvent) => {
+    if (!ref.current) return;
+    const rect = ref.current.getBoundingClientRect();
+    setPos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+  }, []);
+
+  return (
+    <div
+      ref={ref}
+      className={`relative overflow-hidden ${className}`}
+      onMouseMove={handleMouse}
+      onMouseEnter={() => setHovering(true)}
+      onMouseLeave={() => setHovering(false)}
+    >
+      <div
+        className="pointer-events-none absolute inset-0 transition-opacity duration-300"
+        style={{
+          opacity: hovering ? 1 : 0,
+          background: `radial-gradient(600px circle at ${pos.x}px ${pos.y}px, rgba(96,165,250,0.06), transparent 40%)`,
+        }}
+      />
+      {children}
+    </div>
+  );
+}
 
 /* ── Particle Field — same style as vemer.in, blue/cyan palette ── */
 function ParticleField() {
@@ -749,40 +859,36 @@ export default function Home() {
             Enterprise Solutions
           </motion.span>
 
-          {/* Heading — stagger delay 0.5 */}
-          <motion.h1
-            className="text-5xl lg:text-7xl tracking-tight leading-[1.1] mb-8"
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.6 }}
-          >
-            <span className="font-extralight text-white/60">We architect </span>
+          {/* Heading — cinematic word reveal */}
+          <h1 className="text-5xl lg:text-7xl tracking-tight leading-[1.1] mb-8">
+            <TextReveal className="font-extralight text-white/60" delay={0.5}>We architect</TextReveal>
             <br />
-            <span className="font-bold gradient-text">CRM & Digital</span>
+            <TextReveal className="font-bold gradient-text" delay={0.7}>CRM & Digital</TextReveal>
             <br />
-            <span className="font-extralight text-white/60">systems that </span>
-            <span className="font-bold accent-gradient">scale.</span>
-          </motion.h1>
+            <TextReveal className="font-extralight text-white/60" delay={0.9}>systems that</TextReveal>
+            {' '}
+            <TextReveal className="font-bold accent-gradient" delay={1.0}>scale.</TextReveal>
+          </h1>
 
           {/* Subtitle — stagger delay 0.7 */}
           <motion.p
             className="text-lg text-white/50 max-w-2xl mx-auto mb-12 font-light leading-relaxed"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.8 }}
+            initial={{ opacity: 0, y: 20, filter: 'blur(8px)' }}
+            animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+            transition={{ duration: 0.8, delay: 1.2 }}
           >
             End-to-end consulting for <span className="text-white/70">Salesforce</span>, <span className="text-white/70">Microsoft Dynamics</span>, and <span className="text-white/70">SAP</span> — from architecture design to DevOps automation.
           </motion.p>
 
-          {/* Stats — stagger delay 1.0 (#3) */}
+          {/* Stats — stagger delay 1.2 */}
           <div className="flex items-center justify-center gap-10 lg:gap-16 mb-14">
             {stats.map((stat, i) => (
               <motion.div
                 key={stat.label}
                 className="text-center"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 1.0 + i * 0.12 }}
+                initial={{ opacity: 0, scale: 0.5, filter: 'blur(10px)' }}
+                animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
+                transition={{ delay: 1.3 + i * 0.1, type: 'spring', stiffness: 200, damping: 20 }}
               >
                 <div className="text-2xl lg:text-3xl font-bold text-white"><AnimatedCounter value={stat.value} suffix={stat.suffix} /></div>
                 <div className="text-[10px] font-[family-name:var(--font-mono)] text-white/45 uppercase tracking-[2px] mt-1">{stat.label}</div>
@@ -790,19 +896,19 @@ export default function Home() {
             ))}
           </div>
 
-          {/* CTAs — stagger delay 1.5 */}
+          {/* CTAs — magnetic buttons */}
           <motion.div
             className="flex items-center justify-center gap-4 mb-20"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 1.5 }}
+            transition={{ duration: 0.6, delay: 1.6 }}
           >
-            <a href="#contact" className="px-8 py-3.5 bg-blue-500 text-white rounded-full text-sm font-medium hover:bg-blue-400 transition-colors">
+            <MagneticButton href="#contact" className="inline-block px-8 py-3.5 bg-blue-500 text-white rounded-full text-sm font-medium hover:bg-blue-400 transition-colors shadow-[0_0_30px_rgba(96,165,250,0.3)] hover:shadow-[0_0_50px_rgba(96,165,250,0.4)]">
               Start a Project
-            </a>
-            <a href="#solutions" className="px-8 py-3.5 border border-white/10 text-white/50 rounded-full text-sm font-medium hover:border-white/25 hover:text-white/80 transition-colors">
+            </MagneticButton>
+            <MagneticButton href="#solutions" className="inline-block px-8 py-3.5 border border-white/10 text-white/50 rounded-full text-sm font-medium hover:border-white/25 hover:text-white/80 transition-colors">
               Our Solutions
-            </a>
+            </MagneticButton>
           </motion.div>
         </div>
 
@@ -822,6 +928,9 @@ export default function Home() {
           </div>
         </motion.div>
       </section>
+
+      {/* ── Logo bg — half off right edge ── */}
+      <LogoBackground />
 
       {/* ── MARQUEE ── */}
       <div className="border-y border-white/5 py-5 overflow-hidden bg-[#080808]">
@@ -852,11 +961,13 @@ export default function Home() {
             {industries.map((industry, i) => (
               <motion.span
                 key={industry}
-                initial={{ opacity: 0, scale: 0.8 }}
-                whileInView={{ opacity: 1, scale: 1 }}
+                initial={{ opacity: 0, scale: 0.5, y: 20 }}
+                whileInView={{ opacity: 1, scale: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.4, delay: i * 0.06 }}
-                className="glass rounded-full px-5 py-2.5 text-sm text-white/50 font-[family-name:var(--font-mono)] tracking-wide hover:text-white/80 hover:border-blue-500/20 transition-all cursor-default"
+                transition={{ type: 'spring', stiffness: 300, damping: 15, delay: i * 0.06 }}
+                whileHover={{ scale: 1.1, y: -3 }}
+                whileTap={{ scale: 0.95 }}
+                className="glass rounded-full px-5 py-2.5 text-sm text-white/50 font-[family-name:var(--font-mono)] tracking-wide hover:text-white/80 hover:border-blue-500/20 hover:shadow-[0_4px_20px_rgba(96,165,250,0.15)] transition-all cursor-default"
               >
                 {industry}
               </motion.span>
@@ -889,18 +1000,23 @@ export default function Home() {
                   viewport={{ once: true, margin: '-50px' }}
                   transition={{ duration: 0.7, delay: i * 0.12, ease: [0.25, 0.1, 0, 1] }}
                 >
-                  <GlowCard className={`h-full glass rounded-2xl ${colors.border} p-7 shadow-[0_0_1px_rgba(255,255,255,0.1)] hover:shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.06)] transition-all`}>
-                    <div className={`w-10 h-10 rounded-xl ${colors.bg} flex items-center justify-center mb-5`}>
-                      <Icon className={`w-5 h-5 ${colors.icon}`} />
-                    </div>
-                    <h3 className="font-semibold text-white text-[15px] mb-3">{service.title}</h3>
-                    <p className="text-sm text-white/45 leading-relaxed mb-5">{service.desc}</p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {service.tags.map((tag) => (
-                        <span key={tag} className={`text-[10px] font-[family-name:var(--font-mono)] px-2.5 py-1 rounded-lg border ${colors.tag} ${colors.tagBorder}`}>{tag}</span>
-                      ))}
-                    </div>
-                  </GlowCard>
+                  <SpotlightCard className={`h-full glass rounded-2xl ${colors.border} shadow-[0_0_1px_rgba(255,255,255,0.1)] hover:shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.06)] transition-all`}>
+                    <GlowCard className="h-full p-7">
+                      <motion.div
+                        className={`w-10 h-10 rounded-xl ${colors.bg} flex items-center justify-center mb-5`}
+                        whileHover={{ rotate: [0, -10, 10, 0], transition: { duration: 0.5 } }}
+                      >
+                        <Icon className={`w-5 h-5 ${colors.icon}`} />
+                      </motion.div>
+                      <h3 className="font-semibold text-white text-[15px] mb-3">{service.title}</h3>
+                      <p className="text-sm text-white/45 leading-relaxed mb-5">{service.desc}</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {service.tags.map((tag) => (
+                          <span key={tag} className={`text-[10px] font-[family-name:var(--font-mono)] px-2.5 py-1 rounded-lg border ${colors.tag} ${colors.tagBorder}`}>{tag}</span>
+                        ))}
+                      </div>
+                    </GlowCard>
+                  </SpotlightCard>
                 </motion.div>
               );
             })}
@@ -922,27 +1038,64 @@ export default function Home() {
             </h2>
           </SectionReveal>
 
+          {/* Animated connecting line */}
+          <div className="hidden lg:block relative mb-8">
+            <motion.div
+              className="absolute top-1/2 left-[12.5%] right-[12.5%] h-px"
+              style={{ background: 'linear-gradient(90deg, transparent, rgba(96,165,250,0.3), rgba(96,165,250,0.3), transparent)' }}
+              initial={{ scaleX: 0 }}
+              whileInView={{ scaleX: 1 }}
+              viewport={{ once: true, margin: '-100px' }}
+              transition={{ duration: 1.2, ease: [0.25, 0.1, 0, 1] }}
+            />
+            <div className="flex justify-between px-[12.5%]">
+              {processSteps.map((_, i) => (
+                <motion.div
+                  key={i}
+                  className="w-3 h-3 rounded-full bg-blue-500/30 border border-blue-400/50 relative -top-1.5"
+                  initial={{ scale: 0 }}
+                  whileInView={{ scale: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: 0.3 + i * 0.2, type: 'spring', stiffness: 300 }}
+                >
+                  <motion.div
+                    className="absolute inset-0 rounded-full bg-blue-400/20"
+                    animate={{ scale: [1, 2, 1], opacity: [0.5, 0, 0.5] }}
+                    transition={{ duration: 2, repeat: Infinity, delay: i * 0.5 }}
+                  />
+                </motion.div>
+              ))}
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6" style={{ perspective: '1200px' }}>
             {processSteps.map((step, i) => {
               const Icon = step.icon;
               return (
                 <motion.div
                   key={step.title}
-                  initial={{ opacity: 0, x: -40, rotateY: -15, filter: 'blur(6px)' }}
-                  whileInView={{ opacity: 1, x: 0, rotateY: 0, filter: 'blur(0px)' }}
+                  initial={{ opacity: 0, y: 60, scale: 0.85, filter: 'blur(6px)' }}
+                  whileInView={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
                   viewport={{ once: true, margin: '-50px' }}
                   transition={{ duration: 0.7, delay: i * 0.15, ease: [0.25, 0.1, 0, 1] }}
                 >
-                  <GlowCard className="h-full glass rounded-2xl p-7 shadow-[0_0_1px_rgba(255,255,255,0.1)] hover:shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.06)] transition-all">
-                    <div className="flex items-center gap-3 mb-5">
-                      <span className="font-[family-name:var(--font-mono)] text-blue-400/30 text-2xl font-bold">0{i + 1}</span>
-                      <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center">
-                        <Icon className="w-5 h-5 text-blue-400/60" />
+                  <SpotlightCard className="h-full glass rounded-2xl shadow-[0_0_1px_rgba(255,255,255,0.1)] hover:shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.06)] transition-all">
+                    <GlowCard className="h-full p-7">
+                      <div className="flex items-center gap-3 mb-5">
+                        <motion.span
+                          className="font-[family-name:var(--font-mono)] text-blue-400/30 text-2xl font-bold"
+                          whileHover={{ scale: 1.2, color: 'rgba(96,165,250,0.6)' }}
+                        >
+                          0{i + 1}
+                        </motion.span>
+                        <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center">
+                          <Icon className="w-5 h-5 text-blue-400/60" />
+                        </div>
                       </div>
-                    </div>
-                    <h3 className="font-semibold text-white mb-2">{step.title}</h3>
-                    <p className="text-sm text-white/45 leading-relaxed">{step.desc}</p>
-                  </GlowCard>
+                      <h3 className="font-semibold text-white mb-2">{step.title}</h3>
+                      <p className="text-sm text-white/45 leading-relaxed">{step.desc}</p>
+                    </GlowCard>
+                  </SpotlightCard>
                 </motion.div>
               );
             })}
@@ -1007,28 +1160,48 @@ export default function Home() {
                   viewport={{ once: true, margin: '-60px' }}
                   transition={{ duration: 0.8, delay: i * 0.1, ease: [0.25, 0.1, 0, 1] }}
                 >
-                  <GlowCard className={`glass rounded-2xl ${colors.border} p-7 shadow-[0_0_1px_rgba(255,255,255,0.1)] hover:shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.06)] transition-all`}>
-                    <div className="flex items-center gap-3 mb-5">
-                      <div className={`w-8 h-8 rounded-lg ${colors.bg} flex items-center justify-center`}>
-                        <Icon className={`w-4 h-4 ${colors.icon}`} />
-                      </div>
-                      <h3 className="font-semibold text-white text-[15px]">{item.title}</h3>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-2 mb-5">
-                      {item.steps.map((step, si, arr) => (
-                        <div key={step} className="flex items-center gap-2">
-                          <span className="text-[11px] font-[family-name:var(--font-mono)] px-3 py-1.5 bg-white/[0.04] rounded-lg text-white/60 border border-white/5 whitespace-nowrap">{step}</span>
-                          {si < arr.length - 1 && <span className="text-white/35 text-xs">&rarr;</span>}
+                  <SpotlightCard className={`glass rounded-2xl ${colors.border} shadow-[0_0_1px_rgba(255,255,255,0.1)] hover:shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.06)] transition-all`}>
+                    <div className="p-7">
+                      <div className="flex items-center gap-3 mb-5">
+                        <div className={`w-8 h-8 rounded-lg ${colors.bg} flex items-center justify-center`}>
+                          <Icon className={`w-4 h-4 ${colors.icon}`} />
                         </div>
-                      ))}
+                        <h3 className="font-semibold text-white text-[15px]">{item.title}</h3>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2 mb-5">
+                        {item.steps.map((step, si, arr) => (
+                          <div key={step} className="flex items-center gap-2">
+                            <motion.span
+                              className="text-[11px] font-[family-name:var(--font-mono)] px-3 py-1.5 bg-white/[0.04] rounded-lg text-white/60 border border-white/5 whitespace-nowrap"
+                              initial={{ opacity: 0, x: -10 }}
+                              whileInView={{ opacity: 1, x: 0 }}
+                              viewport={{ once: true }}
+                              transition={{ delay: 0.3 + si * 0.08 }}
+                            >
+                              {step}
+                            </motion.span>
+                            {si < arr.length - 1 && (
+                              <motion.span
+                                className="text-white/35 text-xs"
+                                initial={{ opacity: 0 }}
+                                whileInView={{ opacity: 1 }}
+                                viewport={{ once: true }}
+                                transition={{ delay: 0.35 + si * 0.08 }}
+                              >
+                                &rarr;
+                              </motion.span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                      <p className="text-sm text-white/45 leading-relaxed">{item.desc}</p>
+                      <div className="flex flex-wrap gap-2 mt-4">
+                        {item.tags.map((t) => (
+                          <span key={t} className={`text-[10px] font-[family-name:var(--font-mono)] px-2.5 py-1 rounded-lg border ${colors.tag} ${colors.tagBorder}`}>{t}</span>
+                        ))}
+                      </div>
                     </div>
-                    <p className="text-sm text-white/45 leading-relaxed">{item.desc}</p>
-                    <div className="flex flex-wrap gap-2 mt-4">
-                      {item.tags.map((t) => (
-                        <span key={t} className={`text-[10px] font-[family-name:var(--font-mono)] px-2.5 py-1 rounded-lg border ${colors.tag} ${colors.tagBorder}`}>{t}</span>
-                      ))}
-                    </div>
-                  </GlowCard>
+                  </SpotlightCard>
                 </motion.div>
               );
             })}
@@ -1061,19 +1234,31 @@ export default function Home() {
                   viewport={{ once: true, margin: '-50px' }}
                   transition={{ duration: 0.7, delay: i * 0.12, ease: [0.25, 0.1, 0, 1] }}
                 >
-                  <GlowCard className="h-full glass rounded-2xl p-8 shadow-[0_0_1px_rgba(255,255,255,0.1)] hover:shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.06)] transition-all">
-                    <div className="flex items-center gap-3 mb-6">
-                      <Icon className="w-6 h-6 text-blue-400" />
-                      <span className="font-[family-name:var(--font-mono)] text-white font-semibold">{platform.name}</span>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {platform.items.map((item) => (
-                        <span key={item} className="text-sm px-3 py-1.5 bg-white/[0.04] rounded-lg text-white/35 border border-white/5 hover:border-blue-500/20 hover:text-white/60 transition-all cursor-default">
-                          {item}
-                        </span>
-                      ))}
-                    </div>
-                  </GlowCard>
+                  <SpotlightCard className="h-full glass rounded-2xl shadow-[0_0_1px_rgba(255,255,255,0.1)] hover:shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.06)] transition-all">
+                    <GlowCard className="h-full p-8">
+                      <div className="flex items-center gap-3 mb-6">
+                        <motion.div whileHover={{ rotate: 360 }} transition={{ duration: 0.6 }}>
+                          <Icon className="w-6 h-6 text-blue-400" />
+                        </motion.div>
+                        <span className="font-[family-name:var(--font-mono)] text-white font-semibold">{platform.name}</span>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {platform.items.map((item, j) => (
+                          <motion.span
+                            key={item}
+                            className="text-sm px-3 py-1.5 bg-white/[0.04] rounded-lg text-white/35 border border-white/5 hover:border-blue-500/20 hover:text-white/60 transition-all cursor-default"
+                            whileHover={{ scale: 1.05, y: -2 }}
+                            initial={{ opacity: 0, y: 10 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            transition={{ delay: 0.1 + j * 0.05 }}
+                          >
+                            {item}
+                          </motion.span>
+                        ))}
+                      </div>
+                    </GlowCard>
+                  </SpotlightCard>
                 </motion.div>
               );
             })}
@@ -1197,13 +1382,15 @@ export default function Home() {
                     placeholder="Tell us about your project..."
                   />
                 </div>
-                <button
+                <motion.button
                   type="submit"
-                  className="w-full sm:w-auto px-8 py-3.5 bg-blue-500 text-white rounded-full text-sm font-medium hover:bg-blue-400 transition-colors flex items-center justify-center gap-2"
+                  className="w-full sm:w-auto px-8 py-3.5 bg-blue-500 text-white rounded-full text-sm font-medium hover:bg-blue-400 transition-colors flex items-center justify-center gap-2 shadow-[0_0_30px_rgba(96,165,250,0.2)] hover:shadow-[0_0_50px_rgba(96,165,250,0.35)]"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.97 }}
                 >
                   <TbMail className="w-4 h-4" />
                   Send Message
-                </button>
+                </motion.button>
               </form>
             </motion.div>
 
